@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Next.js build output
+.next/
+
+# NestJS build output
+dist/
+
+# Database data
+pgdata/
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
