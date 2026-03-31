@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, LessThan, Repository } from 'typeorm';
 import { Registration } from '../../domain/entities/registration.entity';
 import { IRegistrationRepository } from '../../domain/interfaces/registration-repository.interface';
+import { RegistrationStatus } from '../../domain/enums/registration-status.enum';
 
 @Injectable()
 export class TypeOrmRegistrationRepository implements IRegistrationRepository {
@@ -35,5 +36,17 @@ export class TypeOrmRegistrationRepository implements IRegistrationRepository {
 
   async save(registration: Registration): Promise<Registration> {
     return this.repo.save(registration);
+  }
+
+  async findAbandoned(olderThan: Date, limit: number = 50): Promise<Registration[]> {
+    return this.repo.find({
+      where: {
+        status: In([RegistrationStatus.PENDING, RegistrationStatus.MFA_SENT]),
+        updatedAt: LessThan(olderThan),
+        abandonmentEmailSentAt: IsNull(),
+      },
+      take: limit,
+      order: { updatedAt: 'ASC' },
+    });
   }
 }

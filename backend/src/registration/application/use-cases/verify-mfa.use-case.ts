@@ -21,12 +21,16 @@ export class VerifyMfaUseCase {
       throw new NotFoundException(`Registration with id ${id} not found`);
     }
 
-    if (registration.mfaCode !== dto.code) {
-      throw new BadRequestException('Invalid MFA code');
+    if (registration.mfaCode === null) {
+      throw new BadRequestException('MFA code not sent yet');
     }
 
     if (!registration.mfaExpiresAt || registration.mfaExpiresAt < new Date()) {
-      throw new BadRequestException('MFA code has expired');
+      throw new BadRequestException('MFA code has expired. Please request a new code.');
+    }
+
+    if (registration.mfaCode !== dto.code) {
+      throw new BadRequestException('Invalid MFA code');
     }
 
     registration.mfaVerifiedAt = new Date();

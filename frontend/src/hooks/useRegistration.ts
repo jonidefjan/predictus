@@ -118,6 +118,20 @@ export function useRegistration() {
     }
   }, []);
 
+  const resendMfa = useCallback(async () => {
+    if (!registrationId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await api.resendMfa(registrationId);
+      setRegistration(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao reenviar código');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [registrationId]);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -128,6 +142,7 @@ export function useRegistration() {
     startRegistration,
     updateStep,
     verifyMfa,
+    resendMfa,
     completeRegistration,
     lookupCep,
     clearError,

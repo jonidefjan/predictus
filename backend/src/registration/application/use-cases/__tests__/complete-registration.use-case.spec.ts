@@ -30,6 +30,7 @@ const makeFullRegistration = (overrides: Partial<Registration> = {}): Registrati
     mfaCode: null,
     mfaExpiresAt: null,
     mfaVerifiedAt: new Date(),
+    abandonmentEmailSentAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -46,6 +47,7 @@ describe('CompleteRegistrationUseCase', () => {
       findByEmail: jest.fn(),
       update: jest.fn(),
       save: jest.fn(),
+      findAbandoned: jest.fn(),
     };
 
     useCase = new CompleteRegistrationUseCase(mockRepo);
@@ -82,7 +84,16 @@ describe('CompleteRegistrationUseCase', () => {
 
     await expect(
       useCase.execute('uuid-1', { password: 'Password123' }),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(new BadRequestException('MFA verification required before completing registration'));
+  });
+
+  it('should throw BadRequestException when status is not MFA_VERIFIED', async () => {
+    const registration = makeFullRegistration({ status: RegistrationStatus.MFA_SENT });
+    mockRepo.findById.mockResolvedValue(registration);
+
+    await expect(
+      useCase.execute('uuid-1', { password: 'Password123' }),
+    ).rejects.toThrow(new BadRequestException('Invalid registration status for completion'));
   });
 
   it('should throw BadRequestException when required fields are missing', async () => {

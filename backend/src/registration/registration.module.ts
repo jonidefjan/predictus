@@ -11,6 +11,9 @@ import { StartRegistrationUseCase } from './application/use-cases/start-registra
 import { UpdateRegistrationStepUseCase } from './application/use-cases/update-registration-step.use-case';
 import { CompleteRegistrationUseCase } from './application/use-cases/complete-registration.use-case';
 import { VerifyMfaUseCase } from './application/use-cases/verify-mfa.use-case';
+import { ResendMfaUseCase } from './application/use-cases/resend-mfa.use-case';
+import { ProcessAbandonedRegistrationsUseCase } from './application/use-cases/process-abandoned-registrations.use-case';
+import { AbandonmentScheduler } from './infrastructure/schedulers/abandonment.scheduler';
 import { RegistrationController } from './presentation/controllers/registration.controller';
 import { CepController } from './presentation/controllers/cep.controller';
 
@@ -25,6 +28,9 @@ import { CepController } from './presentation/controllers/cep.controller';
     UpdateRegistrationStepUseCase,
     CompleteRegistrationUseCase,
     VerifyMfaUseCase,
+    ResendMfaUseCase,
+    ProcessAbandonedRegistrationsUseCase,
+    AbandonmentScheduler,
   ],
 })
 export class RegistrationModule {}

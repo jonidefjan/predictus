@@ -49,4 +49,36 @@ describe('ResendEmailProvider', () => {
       'Resend API error',
     );
   });
+
+  it('calls Resend emails.send for abandonment reminder with correct parameters', async () => {
+    mockEmailsSend.mockResolvedValueOnce({ id: 'test-id' });
+
+    await provider.sendAbandonmentReminder('user@example.com', 'reg-uuid-1');
+
+    expect(mockEmailsSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: 'onboarding@resend.dev',
+        to: 'user@example.com',
+        subject: 'Predictus - Continue seu cadastro',
+      }),
+    );
+  });
+
+  it('includes registration link in abandonment reminder HTML', async () => {
+    mockEmailsSend.mockResolvedValueOnce({ id: 'test-id' });
+
+    await provider.sendAbandonmentReminder('user@example.com', 'reg-uuid-1');
+
+    const call = mockEmailsSend.mock.calls[0][0];
+    expect(call.html).toContain('reg-uuid-1');
+  });
+
+  it('re-throws error when abandonment reminder fails', async () => {
+    const error = new Error('Resend API error');
+    mockEmailsSend.mockRejectedValueOnce(error);
+
+    await expect(
+      provider.sendAbandonmentReminder('user@example.com', 'reg-uuid-1'),
+    ).rejects.toThrow('Resend API error');
+  });
 });

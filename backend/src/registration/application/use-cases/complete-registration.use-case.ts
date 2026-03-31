@@ -37,7 +37,11 @@ export class CompleteRegistrationUseCase {
     }
 
     if (!registration.mfaVerifiedAt) {
-      throw new BadRequestException('MFA has not been verified');
+      throw new BadRequestException('MFA verification required before completing registration');
+    }
+
+    if (registration.status !== RegistrationStatus.MFA_VERIFIED) {
+      throw new BadRequestException('Invalid registration status for completion');
     }
 
     const missingFields = REQUIRED_FIELDS.filter(
