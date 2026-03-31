@@ -15,7 +15,12 @@ pgdata/
 
 # OS files
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
 npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
