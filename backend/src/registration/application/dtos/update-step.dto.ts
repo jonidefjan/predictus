@@ -1,4 +1,4 @@
-import { IsInt, IsObject, Max, Min, ValidateNested } from 'class-validator';
+import { IsInt, IsObject, Max, Min } from 'class-validator';
 
 export class UpdateStepDto {
   @IsInt()
@@ -7,6 +7,5 @@ export class UpdateStepDto {
   step!: number;
 
   @IsObject()
-  @ValidateNested()
   data!: Record<string, unknown>;
 }

@@ -9,7 +9,16 @@ jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
 }));
 
+jest.mock('crypto', () => ({
+  createHmac: jest.fn().mockReturnValue({
+    update: jest.fn().mockReturnValue({
+      digest: jest.fn().mockReturnValue('peppered_hex_value'),
+    }),
+  }),
+}));
+
 import * as bcrypt from 'bcrypt';
+import { createHmac } from 'crypto';
 
 describe('CompleteRegistrationUseCase', () => {
   let useCase: CompleteRegistrationUseCase;
@@ -18,6 +27,7 @@ describe('CompleteRegistrationUseCase', () => {
   beforeEach(() => {
     mockRepo = {
       create: jest.fn(),
+      findAll: jest.fn(),
       findById: jest.fn(),
       findByEmail: jest.fn(),
       update: jest.fn(),
@@ -30,6 +40,8 @@ describe('CompleteRegistrationUseCase', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    delete process.env.BCRYPT_SALT_ROUNDS;
+    delete process.env.PASSWORD_PEPPER;
   });
 
   describe('execute', () => {
@@ -56,7 +68,7 @@ describe('CompleteRegistrationUseCase', () => {
         expect(mockRepo.save).toHaveBeenCalledTimes(1);
       });
 
-      it('should hash the password with bcrypt before saving', async () => {
+      it('should hash the password with bcrypt after applying pepper', async () => {
         const dto: CompleteRegistrationDto = { password: 'SecurePass123' };
         const registration = createMockRegistration({
           status: RegistrationStatus.MFA_VERIFIED,
@@ -68,7 +80,8 @@ describe('CompleteRegistrationUseCase', () => {
 
         await useCase.execute('test-uuid-123', dto);
 
-        expect(bcrypt.hash).toHaveBeenCalledWith('SecurePass123', 10);
+        expect(createHmac).toHaveBeenCalledWith('sha256', expect.any(String));
+        expect(bcrypt.hash).toHaveBeenCalledWith('peppered_hex_value', 12);
       });
 
       it('should set status to COMPLETED', async () => {
@@ -200,7 +213,8 @@ describe('CompleteRegistrationUseCase', () => {
     });
 
     describe('Password Handling', () => {
-      it('should call bcrypt.hash with correct salt rounds (10)', async () => {
+      it('should call bcrypt.hash with configurable salt rounds from env', async () => {
+        process.env.BCRYPT_SALT_ROUNDS = '14';
         const dto: CompleteRegistrationDto = { password: 'MyPassword123' };
         const registration = createMockRegistration({
           status: RegistrationStatus.MFA_VERIFIED,
@@ -212,7 +226,38 @@ describe('CompleteRegistrationUseCase', () => {
 
         await useCase.execute('test-uuid-123', dto);
 
-        expect(bcrypt.hash).toHaveBeenCalledWith('MyPassword123', 10);
+        expect(bcrypt.hash).toHaveBeenCalledWith('peppered_hex_value', 14);
+      });
+
+      it('should use default 12 salt rounds when BCRYPT_SALT_ROUNDS is not set', async () => {
+        const dto: CompleteRegistrationDto = { password: 'MyPassword123' };
+        const registration = createMockRegistration({
+          status: RegistrationStatus.MFA_VERIFIED,
+          mfaVerifiedAt: new Date(),
+          password: null,
+        });
+        mockRepo.findById.mockResolvedValue(registration);
+        mockRepo.save.mockImplementation(async (reg) => reg);
+
+        await useCase.execute('test-uuid-123', dto);
+
+        expect(bcrypt.hash).toHaveBeenCalledWith('peppered_hex_value', 12);
+      });
+
+      it('should apply pepper via HMAC-SHA256 before hashing', async () => {
+        process.env.PASSWORD_PEPPER = 'my_secret_pepper';
+        const dto: CompleteRegistrationDto = { password: 'MyPassword123' };
+        const registration = createMockRegistration({
+          status: RegistrationStatus.MFA_VERIFIED,
+          mfaVerifiedAt: new Date(),
+          password: null,
+        });
+        mockRepo.findById.mockResolvedValue(registration);
+        mockRepo.save.mockImplementation(async (reg) => reg);
+
+        await useCase.execute('test-uuid-123', dto);
+
+        expect(createHmac).toHaveBeenCalledWith('sha256', 'my_secret_pepper');
       });
 
       it('should store the hashed password returned by bcrypt', async () => {

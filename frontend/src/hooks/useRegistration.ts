@@ -36,6 +36,20 @@ export function useRegistration() {
     }
   }, [registrationId]);
 
+  // Fetch registration data when id is restored from localStorage
+  useEffect(() => {
+    if (!registrationId || registration) return;
+    let cancelled = false;
+    api.getRegistration(registrationId).then((data) => {
+      if (!cancelled) setRegistration(data);
+    }).catch(() => {
+      // If fetch fails (e.g. deleted), clear stale id
+      localStorage.removeItem(STORAGE_KEY);
+      setRegistrationId(null);
+    });
+    return () => { cancelled = true; };
+  }, [registrationId, registration]);
+
   const startRegistration = useCallback(
     async (email: string) => {
       setIsLoading(true);
@@ -62,7 +76,7 @@ export function useRegistration() {
       try {
         const data = await api.updateStep(registrationId, step, formData);
         setRegistration(data);
-        const nextRoute = STEP_ROUTES[step];
+        const nextRoute = STEP_ROUTES[step + 1];
         if (nextRoute) router.push(nextRoute);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Erro ao atualizar dados');

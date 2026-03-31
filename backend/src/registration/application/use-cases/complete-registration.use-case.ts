@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { createHmac } from 'crypto';
 import {
   IRegistrationRepository,
   REGISTRATION_REPOSITORY,
@@ -55,7 +56,12 @@ export class CompleteRegistrationUseCase {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS ?? '12', 10);
+    const pepper = process.env.PASSWORD_PEPPER ?? '';
+    const pepperedPassword = createHmac('sha256', pepper)
+      .update(dto.password)
+      .digest('hex');
+    const hashedPassword = await bcrypt.hash(pepperedPassword, saltRounds);
 
     registration.password = hashedPassword;
     registration.status = RegistrationStatus.COMPLETED;

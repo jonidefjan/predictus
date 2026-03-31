@@ -66,6 +66,12 @@ export class RegistrationController {
     return this.resendMfaUseCase.execute(id);
   }
 
+  @Get()
+  async listRegistrations(): Promise<Omit<Registration, 'mfaCode' | 'password'>[]> {
+    const registrations = await this.registrationRepo.findAll();
+    return registrations.map(({ mfaCode: _m, password: _p, ...rest }) => rest);
+  }
+
   @Get(':id')
   async getRegistration(@Param('id') id: string): Promise<Omit<Registration, 'mfaCode' | 'password'>> {
     const registration = await this.registrationRepo.findById(id);

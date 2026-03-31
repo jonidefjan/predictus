@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export const api = {
   async startRegistration(email: string) {
@@ -46,6 +46,12 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async listRegistrations() {
+    const res = await fetch(`${API_URL}/registration`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },

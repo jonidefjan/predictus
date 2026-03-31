@@ -17,6 +17,10 @@ export class TypeOrmRegistrationRepository implements IRegistrationRepository {
     return this.repo.save(registration);
   }
 
+  async findAll(): Promise<Registration[]> {
+    return this.repo.find({ order: { updatedAt: 'DESC' } });
+  }
+
   async findById(id: string): Promise<Registration | null> {
     return this.repo.findOne({ where: { id } });
   }
