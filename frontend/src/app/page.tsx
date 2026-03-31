@@ -1,6 +1,6 @@
 export default function Home() {
   return (
-    <main>
+    <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
       <h1>Predictus</h1>
     </main>
   );

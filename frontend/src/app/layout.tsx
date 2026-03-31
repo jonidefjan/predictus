@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Predictus',
-  description: 'Fullstack multi-step registration system',
+  description: 'Multi-step registration system',
 };
 
 export default function RootLayout({
