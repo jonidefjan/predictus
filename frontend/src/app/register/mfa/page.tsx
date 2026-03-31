@@ -7,31 +7,45 @@ import { mfaSchema } from '@/lib/validations';
 import { useRegistration } from '@/hooks/useRegistration';
 import { FormField } from '@/components/FormField';
 import { FormButton } from '@/components/FormButton';
+import { useState, useEffect, useCallback } from 'react';
 
 type FormData = z.infer<typeof mfaSchema>;
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export default function MfaPage() {
-  const { verifyMfa, registration, startRegistration, isLoading, error, clearError } = useRegistration();
+  const { verifyMfa, resendMfa, registration, isLoading, error, clearError } = useRegistration();
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(mfaSchema),
   });
+
+  const codeValue = watch('code', '');
+  const isCodeValid = /^\d{6}$/.test(codeValue);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const onSubmit = async (data: FormData) => {
     clearError();
     await verifyMfa(data.code);
   };
 
-  const handleResend = async () => {
-    if (registration?.email) {
-      clearError();
-      await startRegistration(registration.email);
-    }
-  };
+  const handleResend = useCallback(async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    clearError();
+    await resendMfa();
+    setResendCooldown(RESEND_COOLDOWN_SECONDS);
+  }, [resendCooldown, isLoading, clearError, resendMfa]);
 
   return (
     <div>
@@ -39,7 +53,9 @@ export default function MfaPage() {
         Verificação de Identidade
       </h1>
       <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, textAlign: 'center' }}>
-        Enviamos um código de 6 dígitos para seu email. Verifique sua caixa de entrada.
+        {registration?.email
+          ? `Enviamos um código de 6 dígitos para ${registration.email}`
+          : 'Enviamos um código de 6 dígitos para seu email. Verifique sua caixa de entrada.'}
       </p>
 
       {error && (
@@ -79,7 +95,7 @@ export default function MfaPage() {
           />
         </FormField>
 
-        <FormButton type="submit" isLoading={isLoading}>
+        <FormButton type="submit" isLoading={isLoading} disabled={!isCodeValid || isLoading}>
           Verificar Código
         </FormButton>
       </form>
@@ -88,17 +104,17 @@ export default function MfaPage() {
         <button
           type="button"
           onClick={handleResend}
-          disabled={isLoading}
+          disabled={resendCooldown > 0 || isLoading}
           style={{
             background: 'none',
             border: 'none',
-            color: '#2563eb',
+            color: resendCooldown > 0 ? '#9ca3af' : '#2563eb',
             fontSize: 14,
-            cursor: 'pointer',
-            textDecoration: 'underline',
+            cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
+            textDecoration: resendCooldown > 0 ? 'none' : 'underline',
           }}
         >
-          Reenviar código
+          {resendCooldown > 0 ? `Reenviar código (${resendCooldown}s)` : 'Reenviar código'}
         </button>
       </div>
     </div>

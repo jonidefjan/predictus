@@ -41,6 +41,21 @@ export const api = {
     return res.json();
   },
 
+  async resendMfa(id: string) {
+    const res = await fetch(`${API_URL}/registration/${id}/mfa/resend`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async getRegistration(id: string) {
+    const res = await fetch(`${API_URL}/registration/${id}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   async lookupCep(cep: string) {
     const res = await fetch(`${API_URL}/cep/${cep}`);
     if (!res.ok) return null;

@@ -36,4 +36,32 @@ export class ResendEmailProvider implements IEmailProvider {
       throw error;
     }
   }
+
+  async sendAbandonmentReminder(to: string, registrationId: string): Promise<void> {
+    try {
+      await this.resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to,
+        subject: 'Predictus - Continue seu cadastro',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #333;">Predictus</h2>
+            <p>Olá! Notamos que você iniciou seu cadastro mas não finalizou.</p>
+            <p>Seu progresso foi salvo! Clique no botão abaixo para continuar de onde parou:</p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/register/resume?id=${registrationId}" 
+                 style="background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+                Continuar Cadastro
+              </a>
+            </div>
+            <p style="color: #999; font-size: 12px;">Se você não iniciou este cadastro, ignore este email.</p>
+          </div>
+        `,
+      });
+      this.logger.log(`Abandonment reminder sent to ${to}`);
+    } catch (error) {
+      this.logger.error(`Failed to send abandonment reminder to ${to}`, error);
+      throw error;
+    }
+  }
 }

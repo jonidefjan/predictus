@@ -26,6 +26,7 @@ const makeRegistration = (overrides: Partial<Registration> = {}): Registration =
     mfaCode: '123456',
     mfaExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
     mfaVerifiedAt: null,
+    abandonmentEmailSentAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -42,6 +43,7 @@ describe('VerifyMfaUseCase', () => {
       findByEmail: jest.fn(),
       update: jest.fn(),
       save: jest.fn(),
+      findAbandoned: jest.fn(),
     };
 
     useCase = new VerifyMfaUseCase(mockRepo);
@@ -77,13 +79,13 @@ describe('VerifyMfaUseCase', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('should throw BadRequestException when MFA code is invalid', async () => {
-    const registration = makeRegistration({ mfaCode: '123456' });
+  it('should throw BadRequestException when MFA code has not been sent (null)', async () => {
+    const registration = makeRegistration({ mfaCode: null });
     mockRepo.findById.mockResolvedValue(registration);
 
     await expect(
-      useCase.execute('uuid-1', { code: '999999' }),
-    ).rejects.toThrow(BadRequestException);
+      useCase.execute('uuid-1', { code: '123456' }),
+    ).rejects.toThrow(new BadRequestException('MFA code not sent yet'));
   });
 
   it('should throw BadRequestException when MFA code is expired', async () => {
@@ -95,6 +97,27 @@ describe('VerifyMfaUseCase', () => {
 
     await expect(
       useCase.execute('uuid-1', { code: '123456' }),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow(new BadRequestException('MFA code has expired. Please request a new code.'));
+  });
+
+  it('should throw BadRequestException when MFA code is invalid', async () => {
+    const registration = makeRegistration({ mfaCode: '123456' });
+    mockRepo.findById.mockResolvedValue(registration);
+
+    await expect(
+      useCase.execute('uuid-1', { code: '999999' }),
+    ).rejects.toThrow(new BadRequestException('Invalid MFA code'));
+  });
+
+  it('should clear mfaCode after successful verification', async () => {
+    const dto: VerifyMfaDto = { code: '123456' };
+    const registration = makeRegistration();
+    mockRepo.findById.mockResolvedValue(registration);
+    mockRepo.save.mockImplementation(async (reg) => reg);
+
+    await useCase.execute('uuid-1', dto);
+
+    const callArg = mockRepo.save.mock.calls[0][0];
+    expect(callArg.mfaCode).toBeNull();
   });
 });

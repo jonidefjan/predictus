@@ -26,6 +26,7 @@ const makeRegistration = (overrides: Partial<Registration> = {}): Registration =
     mfaCode: null,
     mfaExpiresAt: null,
     mfaVerifiedAt: null,
+    abandonmentEmailSentAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -42,6 +43,7 @@ describe('UpdateRegistrationStepUseCase', () => {
       findByEmail: jest.fn(),
       update: jest.fn(),
       save: jest.fn(),
+      findAbandoned: jest.fn(),
     };
 
     useCase = new UpdateRegistrationStepUseCase(mockRepo);

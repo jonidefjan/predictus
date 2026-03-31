@@ -70,6 +70,9 @@ export class Registration {
   @Column({ type: 'timestamp', nullable: true })
   mfaVerifiedAt!: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true })
+  abandonmentEmailSentAt!: Date | null;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 

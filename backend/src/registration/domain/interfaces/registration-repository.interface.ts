@@ -8,4 +8,5 @@ export interface IRegistrationRepository {
   findByEmail(email: string): Promise<Registration | null>;
   update(id: string, data: Partial<Registration>): Promise<Registration>;
   save(registration: Registration): Promise<Registration>;
+  findAbandoned(olderThan: Date, limit?: number): Promise<Registration[]>;
 }
