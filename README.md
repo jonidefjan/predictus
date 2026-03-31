@@ -1,103 +1,303 @@
-# Predictus
+# 🎯 Predictus
 
-Predictus is a fullstack multi-step registration system with incremental persistence, resume-after-abandonment support, and MFA via email.
+> Sistema de cadastro multi-step com persistência incremental, recuperação de abandono e verificação MFA por email.
+
+![Node.js](https://img.shields.io/badge/Node.js-20-green)
+![NestJS](https://img.shields.io/badge/NestJS-10-red)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)
+
+---
+
+## Visão Geral
+
+O **Predictus** é um sistema fullstack de cadastro em múltiplas etapas com:
+
+- **Cadastro em 5 etapas** (identificação, dados pessoais, endereço, MFA, revisão)
+- **Persistência incremental** — dados salvos a cada etapa, nenhum progresso é perdido
+- **Recuperação de abandono** — cron job detecta cadastros inativos e envia e-mail de retomada
+- **MFA via e-mail** — código de 6 dígitos gerado, enviado via Resend e validado com expiração configurável
+- **Clean Architecture** no backend (domain → application → infrastructure → presentation)
+- **Mobile-first** no frontend
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 (App Router, TypeScript) |
-| Backend | NestJS (TypeScript) |
-| Database | PostgreSQL 16 with TypeORM |
-| Infrastructure | Docker + Docker Compose |
+| Camada | Tecnologia | Versão |
+|---|---|---|
+| Frontend | Next.js (App Router) | 14+ |
+| Frontend | React | 18 |
+| Frontend | TypeScript | 5 |
+| Frontend | React Hook Form | latest |
+| Frontend | Zod | latest |
+| Backend | NestJS | 10 |
+| Backend | TypeORM | latest |
+| Backend | PostgreSQL | 16 |
+| Backend | Resend (e-mail) | latest |
+| Backend | bcrypt | latest |
+| Backend | class-validator | latest |
+| Infraestrutura | Docker + Docker Compose | latest |
+| Testes | Jest + ts-jest | latest |
 
 ---
 
-## Architecture
+## Arquitetura
 
-- **Backend**: Clean Architecture — domain, application, infrastructure, and presentation layers.
-- **Frontend**: Feature-based structure using the Next.js App Router.
+### Estrutura do Projeto
+
+```
+predictus/
+├── backend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── nest-cli.json
+│   └── src/
+│       ├── main.ts
+│       ├── app.module.ts
+│       ├── registration/
+│       │   ├── registration.module.ts
+│       │   ├── domain/
+│       │   │   ├── entities/
+│       │   │   ├── interfaces/
+│       │   │   └── enums/
+│       │   ├── application/
+│       │   │   ├── use-cases/
+│       │   │   └── dtos/
+│       │   ├── infrastructure/
+│       │   │   ├── repositories/
+│       │   │   ├── providers/
+│       │   │   └── schedulers/
+│       │   └── presentation/
+│       │       └── controllers/
+│       ├── migrations/
+│       └── shared/
+├── frontend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── next.config.mjs
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx
+│       │   ├── page.tsx
+│       │   └── register/
+│       │       ├── layout.tsx
+│       │       ├── identification/
+│       │       ├── personal-data/
+│       │       ├── address/
+│       │       ├── mfa/
+│       │       ├── review/
+│       │       ├── success/
+│       │       └── resume/
+│       ├── hooks/
+│       ├── lib/
+│       ├── components/
+│       └── types/
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+### Clean Architecture (Backend)
+
+```
+┌──────────────────────────────────────────────┐
+│                PRESENTATION                   │
+│           Controllers (thin, no logic)        │
+├──────────────────────────────────────────────┤
+│                APPLICATION                    │
+│        Use Cases (business logic)             │
+│        DTOs (validation)                      │
+├──────────────────────────────────────────────┤
+│                  DOMAIN                       │
+│     Entities, Interfaces, Enums               │
+├──────────────────────────────────────────────┤
+│              INFRASTRUCTURE                   │
+│  Repositories (TypeORM), Providers (Resend,   │
+│  ViaCEP), Schedulers (Cron)                   │
+└──────────────────────────────────────────────┘
+```
+
+### Fluxo de Cadastro
+
+```
+Etapa 1          Etapa 2            Etapa 3         Etapa 4        Etapa 5        Etapa 6
+E-mail      →  Dados Pessoais  →  Endereço     →    MFA       →  Revisão    →  Sucesso
+POST /start    PATCH /:id/step    PATCH /:id/step  POST /:id/mfa  POST /:id/complete
+```
+
+### Injeção de Dependência
+
+| Token | Interface | Implementação |
+|---|---|---|
+| `REGISTRATION_REPOSITORY` | `IRegistrationRepository` | `TypeOrmRegistrationRepository` |
+| `EMAIL_PROVIDER` | `IEmailProvider` | `ResendEmailProvider` |
+| `CEP_PROVIDER` | `ICepProvider` | `ViaCepProvider` |
 
 ---
 
-## Getting Started with Docker
+## Iniciando com Docker
 
-### Prerequisites
+### Pré-requisitos
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
+- [Docker](https://docs.docker.com/get-docker/) (20.10+)
+- [Docker Compose](https://docs.docker.com/compose/install/) (2.0+)
 
-### Steps
+### Instalação
 
-1. **Clone the repository**
-
+1. Clone o repositório:
    ```bash
    git clone https://github.com/jonidefjan/predictus.git
    cd predictus
    ```
 
-2. **Create your `.env` file**
-
+2. Copie o arquivo de variáveis de ambiente:
    ```bash
    cp .env.example .env
    ```
 
-   Open `.env` and fill in the required values (see the [Environment Variables](#environment-variables) table below).
+3. Edite o `.env` e preencha com seus valores reais:
+   ```bash
+   nano .env  # ou use seu editor preferido
+   ```
 
-3. **Start all services**
-
+4. Inicie todos os serviços:
    ```bash
    docker-compose up --build
    ```
 
-4. **Access the services**
-
-   | Service | URL |
-   |---|---|
-   | Frontend | http://localhost:3000 |
-   | Backend API | http://localhost:3001 |
-   | PostgreSQL | localhost:5432 |
+5. Acesse a aplicação:
+   - 🌐 Frontend: http://localhost:3000
+   - ⚙️ Backend API: http://localhost:3001
+   - 🗄️ PostgreSQL: localhost:5432
 
 ---
 
-## Environment Variables
+## Variáveis de Ambiente
 
-| Variable | Description | Example / Default |
+| Variável | Descrição | Exemplo | Obrigatório |
+|---|---|---|---|
+| `DATABASE_HOST` | Host do PostgreSQL | `postgres` | ✅ |
+| `DATABASE_PORT` | Porta do PostgreSQL | `5432` | ✅ |
+| `DATABASE_USER` | Usuário do banco de dados | `your_user` | ✅ |
+| `DATABASE_PASSWORD` | Senha do banco de dados | `your_password` | ✅ |
+| `DATABASE_NAME` | Nome do banco de dados | `predictus` | ✅ |
+| `POSTGRES_USER` | Usuário do container PostgreSQL | `your_user` | ✅ |
+| `POSTGRES_PASSWORD` | Senha do container PostgreSQL | `your_password` | ✅ |
+| `POSTGRES_DB` | Banco de dados do container PostgreSQL | `predictus` | ✅ |
+| `RESEND_API_KEY` | API key do Resend para envio de e-mails | `re_xxx` | ✅ |
+| `MFA_EXPIRATION_MINUTES` | Tempo de expiração do código MFA (minutos) | `5` | ❌ (padrão: 5) |
+| `FRONTEND_URL` | URL do frontend (para links nos e-mails) | `http://localhost:3000` | ❌ |
+| `NEXT_PUBLIC_API_URL` | URL do backend para o frontend | `http://localhost:3001` | ✅ |
+
+> ⚠️ **NUNCA** commite o `.env` com valores reais. Apenas o `.env.example` com placeholders deve estar no repositório.
+
+---
+
+## API Endpoints
+
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `DATABASE_HOST` | Hostname of the PostgreSQL service | `postgres` |
-| `DATABASE_PORT` | Port of the PostgreSQL service | `5432` |
-| `DATABASE_USER` | PostgreSQL username | `your_database_user_here` |
-| `DATABASE_PASSWORD` | PostgreSQL password | `your_database_password_here` |
-| `DATABASE_NAME` | PostgreSQL database name | `your_database_name_here` |
-| `POSTGRES_USER` | PostgreSQL username (used by the postgres Docker image) | `your_database_user_here` |
-| `POSTGRES_PASSWORD` | PostgreSQL password (used by the postgres Docker image) | `your_database_password_here` |
-| `POSTGRES_DB` | PostgreSQL database name (used by the postgres Docker image) | `your_database_name_here` |
-| `RESEND_API_KEY` | API key for the Resend email service | `your_resend_api_key_here` |
-| `MFA_EXPIRATION_MINUTES` | How long (in minutes) an MFA code remains valid | `5` |
-| `NEXT_PUBLIC_API_URL` | Public URL of the backend API, accessible from the browser | `http://localhost:3001` |
-
-> **⚠️ Important**: Never commit your `.env` file. It is already listed in `.gitignore`.
+| `POST` | `/registration/start` | Inicia o cadastro e envia código MFA |
+| `GET` | `/registration/:id` | Obtém dados do cadastro (para retomada) |
+| `PATCH` | `/registration/:id/step` | Atualiza dados de uma etapa incrementalmente |
+| `POST` | `/registration/:id/mfa` | Verifica o código MFA |
+| `POST` | `/registration/:id/mfa/resend` | Reenvia o código MFA |
+| `POST` | `/registration/:id/complete` | Finaliza o cadastro |
+| `GET` | `/cep/:cep` | Busca endereço pelo CEP |
 
 ---
 
-## Running Backend Tests
+## Executando Testes
 
+### Testes unitários
 ```bash
 docker-compose exec backend npm run test
 ```
 
-For test coverage:
-
+### Com cobertura
 ```bash
 docker-compose exec backend npm run test:cov
 ```
 
+### Watch mode
+```bash
+docker-compose exec backend npm run test:watch
+```
+
+### Apenas os use cases principais
+```bash
+docker-compose exec backend npx jest --testPathPattern="use-cases/__tests__"
+```
+
 ---
 
-## External Services
+## Funcionalidades em Destaque
 
-| Service | Purpose |
-|---|---|
-| [Resend](https://resend.com) | Transactional email for MFA code delivery |
-| [ViaCEP](https://viacep.com.br) | Brazilian ZIP code (CEP) lookup for address auto-fill |
+### Persistência Incremental
+
+Cada etapa do formulário envia um `PATCH /registration/:id/step` ao ser concluída. O progresso é salvo no banco a cada avanço, garantindo que nenhum dado seja perdido em caso de abandono ou falha.
+
+### Recuperação de Abandono
+
+Um cron job roda a cada 10 minutos e detecta cadastros com mais de 30 minutos de inatividade (status `IN_PROGRESS`). Para cada um, um e-mail de recuperação é enviado com um link direto para `/register/resume?id=xxx`, permitindo retomar de onde parou.
+
+### MFA via E-mail
+
+Ao iniciar o cadastro com o e-mail, um código de 6 dígitos é gerado e enviado via Resend. O código é de uso único e expira após o tempo configurado em `MFA_EXPIRATION_MINUTES`. Após a verificação bem-sucedida, o código é limpo do banco.
+
+### Autopreenchimento de CEP
+
+O frontend chama o endpoint `/cep/:cep` do backend (não diretamente a API ViaCEP). O backend delega para o `ViaCepProvider` via interface `ICepProvider`, mantendo o frontend totalmente desacoplado da fonte de dados de endereços.
+
+---
+
+## Serviços Externos
+
+| Serviço | Finalidade | Padrão de Provider |
+|---|---|---|
+| [Resend](https://resend.com) | E-mail (códigos MFA + lembretes de abandono) | `IEmailProvider` → `ResendEmailProvider` |
+| [ViaCEP](https://viacep.com.br) | Busca de endereço por CEP | `ICepProvider` → `ViaCepProvider` |
+
+Para trocar um provider, altere apenas uma linha no `registration.module.ts`:
+```typescript
+// Exemplo: trocar para outro provedor de e-mail
+{ provide: EMAIL_PROVIDER, useClass: SendGridEmailProvider }
+```
+
+---
+
+## Arquitetura Docker
+
+```
+┌─────────────┐     ┌─────────────┐     ┌──────────────┐
+│  Frontend   │────▶│  Backend    │────▶│  PostgreSQL  │
+│  :3000      │     │  :3001      │     │  :5432       │
+│  Next.js    │     │  NestJS     │     │  postgres:16 │
+└─────────────┘     └─────────────┘     └──────────────┘
+       │                   │                    │
+       └───────────────────┴────────────────────┘
+                    app-network (bridge)
+```
+
+---
+
+## Segurança
+
+- ✅ Senhas com hash bcrypt (salt rounds 10)
+- ✅ Códigos MFA de uso único (removidos após verificação)
+- ✅ Códigos MFA com expiração configurável
+- ✅ Campos sensíveis (`password`, `mfaCode`) nunca expostos nas respostas da API
+- ✅ Variáveis de ambiente para todos os secrets
+- ✅ `.env` no `.gitignore` — apenas `.env.example` é commitado
+
+---
+
+## Licença
+
+MIT
