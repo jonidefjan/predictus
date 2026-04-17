@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +10,7 @@ import { useRegistration } from '@/hooks/useRegistration';
 import { FormField } from '@/components/FormField';
 import { FormButton } from '@/components/FormButton';
 import { MaskedInput } from '@/components/MaskedInput';
+import { formatDateForInput } from '@/lib/formatters';
 
 type FormData = z.infer<typeof personalDataSchema>;
 
@@ -21,16 +24,29 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function PersonalDataPage() {
-  const { updateStep, isLoading, error, clearError } = useRegistration();
+  const router = useRouter();
+  const { updateStep, registration, isLoading, error, clearError } = useRegistration();
 
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(personalDataSchema),
   });
+
+  useEffect(() => {
+    if (!registration) return;
+
+    reset({
+      name: registration.name ?? '',
+      cpf: registration.cpf ?? '',
+      phone: registration.phone ?? '',
+      birthDate: formatDateForInput(registration.birthDate),
+    });
+  }, [registration, reset]);
 
   const onSubmit = async (data: FormData) => {
     clearError();
@@ -110,9 +126,18 @@ export default function PersonalDataPage() {
           />
         </FormField>
 
-        <FormButton type="submit" isLoading={isLoading}>
-          Continuar
-        </FormButton>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <FormButton type="button" variant="secondary" onClick={() => router.push('/register/identification')}>
+              Voltar
+            </FormButton>
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormButton type="submit" isLoading={isLoading}>
+              Continuar
+            </FormButton>
+          </div>
+        </div>
       </form>
     </div>
   );

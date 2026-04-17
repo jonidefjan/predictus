@@ -1,5 +1,44 @@
 import { z } from 'zod';
 
+function isValidBrazilPhone(value: string) {
+  const digits = value.replace(/\D/g, '');
+  return /^(?:[1-9]{2})(?:\d{8}|9\d{8})$/.test(digits);
+}
+
+function isValidBirthDate(value: string) {
+  if (!value) return false;
+
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const now = new Date();
+  if (date > now || year < 1900) return false;
+
+  let age = now.getFullYear() - year;
+  const hadBirthdayThisYear =
+    now.getMonth() > month - 1 ||
+    (now.getMonth() === month - 1 && now.getDate() >= day);
+
+  if (!hadBirthdayThisYear) age -= 1;
+
+  return age >= 18;
+}
+
 export const identificationSchema = z.object({
   email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
 });
@@ -11,8 +50,8 @@ export const personalDataSchema = z.object({
     .min(11, 'CPF inválido')
     .max(14, 'CPF inválido')
     .refine((val) => /^\d{11}$/.test(val.replace(/\D/g, '')), 'CPF inválido'),
-  phone: z.string().min(10, 'Telefone inválido'),
-  birthDate: z.string().min(1, 'Data de nascimento é obrigatória'),
+  phone: z.string().refine(isValidBrazilPhone, 'Telefone brasileiro inválido'),
+  birthDate: z.string().refine(isValidBirthDate, 'Data de nascimento inválida ou menor de 18 anos'),
 });
 
 export const addressSchema = z.object({

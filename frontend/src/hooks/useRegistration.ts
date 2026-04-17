@@ -4,17 +4,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Registration } from '@/types/registration';
+import { STEP_ROUTES, getRouteByUiStep } from '@/lib/registration-flow';
 
 const STORAGE_KEY = 'predictus_registration_id';
-
-const STEP_ROUTES = [
-  '/register/identification',
-  '/register/personal-data',
-  '/register/address',
-  '/register/mfa',
-  '/register/review',
-  '/register/success',
-];
 
 export function useRegistration() {
   const router = useRouter();
@@ -148,6 +140,13 @@ export function useRegistration() {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const goToStep = useCallback(
+    (step: number) => {
+      router.push(getRouteByUiStep(step));
+    },
+    [router],
+  );
+
   return {
     registrationId,
     registration,
@@ -160,5 +159,6 @@ export function useRegistration() {
     completeRegistration,
     lookupCep,
     clearError,
+    goToStep,
   };
 }

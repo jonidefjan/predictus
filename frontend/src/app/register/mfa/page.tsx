@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,6 +15,7 @@ type FormData = z.infer<typeof mfaSchema>;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function MfaPage() {
+  const router = useRouter();
   const { verifyMfa, resendMfa, registration, isLoading, error, clearError } = useRegistration();
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -95,9 +97,18 @@ export default function MfaPage() {
           />
         </FormField>
 
-        <FormButton type="submit" isLoading={isLoading} disabled={!isCodeValid || isLoading}>
-          Verificar Código
-        </FormButton>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <FormButton type="button" variant="secondary" onClick={() => router.push('/register/address')}>
+              Voltar
+            </FormButton>
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormButton type="submit" isLoading={isLoading} disabled={!isCodeValid || isLoading}>
+              Verificar Código
+            </FormButton>
+          </div>
+        </div>
       </form>
 
       <div style={{ marginTop: 16, textAlign: 'center' }}>

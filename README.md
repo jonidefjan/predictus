@@ -24,6 +24,17 @@ O **Predictus** é um sistema fullstack de cadastro em múltiplas etapas com:
 
 ---
 
+## Documentação por módulo
+
+Para instruções objetivas de cada aplicação:
+
+- Backend: [backend/README.md](backend/README.md)
+- Frontend: [frontend/README.md](frontend/README.md)
+
+Este README da raiz concentra visão geral, arquitetura e execução integrada via Docker Compose.
+
+---
+
 ## Tech Stack
 
 | Camada | Tecnologia | Versão |
@@ -138,13 +149,13 @@ POST /start    PATCH /:id/step    PATCH /:id/step  POST /:id/mfa  POST /:id/comp
 
 > O código MFA é gerado e enviado automaticamente ao completar a etapa de Endereço (step 2).
 
-### Injeção de Dependência
+### Serviços principais
 
-| Token | Interface | Implementação |
-|---|---|---|
-| `REGISTRATION_REPOSITORY` | `IRegistrationRepository` | `TypeOrmRegistrationRepository` |
-| `EMAIL_PROVIDER` | `IEmailProvider` | `ResendEmailProvider` |
-| `CEP_PROVIDER` | `ICepProvider` | `ViaCepProvider` |
+| Componente | Responsabilidade |
+|---|---|
+| `RegistrationService` | Orquestra o fluxo de cadastro, MFA, conclusão e abandono |
+| `ResendEmailProvider` | Envio de código MFA e e-mail de retomada |
+| `ViaCepProvider` | Consulta de endereço por CEP |
 
 ---
 
@@ -175,34 +186,34 @@ POST /start    PATCH /:id/step    PATCH /:id/step  POST /:id/mfa  POST /:id/comp
 
 4. Inicie todos os serviços:
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
 5. Acesse a aplicação:
-   - 🌐 Frontend: http://localhost:3000
-   - ⚙️ Backend API: http://localhost:3001
+   - 🌐 Frontend: valor de `FRONTEND_URL` no `.env` ou `http://localhost:3000`
+   - ⚙️ Backend API: valor de `NEXT_PUBLIC_API_URL` no `.env` ou `http://localhost:3001`
    - 🗄️ PostgreSQL: localhost:5432
 
 ---
 
 ## Variáveis de Ambiente
 
-| Variável | Descrição | Exemplo | Obrigatório |
-|---|---|---|---|
-| `DATABASE_HOST` | Host do PostgreSQL | `postgres` | ✅ |
-| `DATABASE_PORT` | Porta do PostgreSQL | `5432` | ✅ |
-| `DATABASE_USER` | Usuário do banco de dados | `your_user` | ✅ |
-| `DATABASE_PASSWORD` | Senha do banco de dados | `your_password` | ✅ |
-| `DATABASE_NAME` | Nome do banco de dados | `predictus` | ✅ |
-| `POSTGRES_USER` | Usuário do container PostgreSQL | `your_user` | ✅ |
-| `POSTGRES_PASSWORD` | Senha do container PostgreSQL | `your_password` | ✅ |
-| `POSTGRES_DB` | Banco de dados do container PostgreSQL | `predictus` | ✅ |
-| `RESEND_API_KEY` | API key do Resend para envio de e-mails | `re_xxx` | ✅ |
-| `PASSWORD_PEPPER` | Segredo HMAC-SHA256 aplicado à senha antes do bcrypt | `your_secret_pepper` | ✅ |
-| `BCRYPT_SALT_ROUNDS` | Rounds do bcrypt para hash de senha | `12` | ❌ (padrão: 12) |
-| `MFA_EXPIRATION_MINUTES` | Tempo de expiração do código MFA (minutos) | `5` | ❌ (padrão: 5) |
-| `FRONTEND_URL` | URL do frontend (para links nos e-mails) | `http://localhost:3000` | ❌ |
-| `NEXT_PUBLIC_API_URL` | URL do backend para o frontend | `http://localhost:3001` | ❌ |
+| Variável | Descrição | Obrigatório |
+|---|---|---|
+| `DATABASE_HOST` | Host do PostgreSQL | ✅ |
+| `DATABASE_PORT` | Porta do PostgreSQL | ✅ |
+| `DATABASE_USER` | Usuário do banco de dados | ✅ |
+| `DATABASE_PASSWORD` | Senha do banco de dados | ✅ |
+| `DATABASE_NAME` | Nome do banco de dados | ✅ |
+| `POSTGRES_USER` | Usuário do container PostgreSQL | ✅ |
+| `POSTGRES_PASSWORD` | Senha do container PostgreSQL | ✅ |
+| `POSTGRES_DB` | Banco de dados do container PostgreSQL | ✅ |
+| `RESEND_API_KEY` | API key do Resend para envio de e-mails | ✅ |
+| `PASSWORD_PEPPER` | Segredo HMAC-SHA256 aplicado à senha antes do bcrypt | ✅ |
+| `BCRYPT_SALT_ROUNDS` | Rounds do bcrypt para hash de senha | ❌ |
+| `MFA_EXPIRATION_MINUTES` | Tempo de expiração do código MFA (minutos) | ❌ |
+| `FRONTEND_URL` | URL pública do frontend usada nos e-mails | ❌ |
+| `NEXT_PUBLIC_API_URL` | URL pública da API consumida pelo frontend | ❌ |
 
 > ⚠️ **NUNCA** commite o `.env` com valores reais. Apenas o `.env.example` com placeholders deve estar no repositório.
 
@@ -228,22 +239,22 @@ POST /start    PATCH /:id/step    PATCH /:id/step  POST /:id/mfa  POST /:id/comp
 
 ### Testes unitários
 ```bash
-docker-compose exec backend npm run test
+docker compose exec backend npm run test
 ```
 
 ### Com cobertura
 ```bash
-docker-compose exec backend npm run test:cov
+docker compose exec backend npm run test:cov
 ```
 
 ### Watch mode
 ```bash
-docker-compose exec backend npm run test:watch
+docker compose exec backend npm run test:watch
 ```
 
-### Apenas os use cases principais
+### Suíte principal do backend
 ```bash
-docker-compose exec backend npx jest --testPathPattern="use-cases/__tests__"
+docker compose exec backend npm run test -- --runInBand
 ```
 
 ---
@@ -318,7 +329,7 @@ Para trocar um provider, altere apenas uma linha no `registration.module.ts`:
 
 ## Segurança
 
-- ✅ Senhas com hash bcrypt (salt rounds configurável via `BCRYPT_SALT_ROUNDS`, padrão 12)
+- ✅ Senhas com hash bcrypt (salt rounds configurável via `BCRYPT_SALT_ROUNDS`)
 - ✅ Pepper (HMAC-SHA256) aplicado à senha antes do bcrypt via `PASSWORD_PEPPER`
 - ✅ Códigos MFA de uso único (removidos após verificação)
 - ✅ Códigos MFA com expiração configurável

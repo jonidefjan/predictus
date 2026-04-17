@@ -39,6 +39,7 @@ services:
       MFA_EXPIRATION_MINUTES: ${MFA_EXPIRATION_MINUTES}
       PASSWORD_PEPPER: ${PASSWORD_PEPPER}
       BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS}
+      FRONTEND_URL: ${FRONTEND_URL}
     healthcheck:
       test: ['CMD-SHELL', 'wget -q -O - http://localhost:3001/health >/dev/null 2>&1 || exit 1']
       interval: 10s
@@ -62,6 +63,9 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      BACKEND_INTERNAL_URL: http://backend:3001
     command: npm run dev
     networks:
       - app-network

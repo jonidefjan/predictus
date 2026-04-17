@@ -2,6 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { StepIndicator } from '@/components/StepIndicator';
+import { useRegistration } from '@/hooks/useRegistration';
+import { getMaxAccessibleStep } from '@/lib/registration-flow';
 
 const STEP_LABELS = ['Identificação', 'Dados Pessoais', 'Endereço', 'MFA', 'Revisão'];
 
@@ -15,6 +17,7 @@ const PATH_TO_STEP: Record<string, number> = {
 
 export default function RegisterLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { registration, goToStep } = useRegistration();
   const currentStep = PATH_TO_STEP[pathname] ?? 0;
   const isSuccess = pathname === '/register/success';
 
@@ -35,7 +38,12 @@ export default function RegisterLayout({ children }: { children: React.ReactNode
             Predictus
           </h2>
           {!isSuccess && currentStep > 0 && (
-            <StepIndicator currentStep={currentStep} steps={STEP_LABELS} />
+            <StepIndicator
+              currentStep={currentStep}
+              steps={STEP_LABELS}
+              maxAccessibleStep={getMaxAccessibleStep(registration)}
+              onStepClick={goToStep}
+            />
           )}
         </div>
         <div

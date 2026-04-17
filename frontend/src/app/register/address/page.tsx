@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,7 +23,8 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function AddressPage() {
-  const { updateStep, lookupCep, isLoading, error, clearError } = useRegistration();
+  const router = useRouter();
+  const { updateStep, lookupCep, registration, isLoading, error, clearError } = useRegistration();
   const [cepLoading, setCepLoading] = useState(false);
 
   const {
@@ -30,11 +32,26 @@ export default function AddressPage() {
     handleSubmit,
     control,
     setValue,
+    reset,
     watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(addressSchema),
   });
+
+  useEffect(() => {
+    if (!registration) return;
+
+    reset({
+      cep: registration.cep ?? '',
+      street: registration.street ?? '',
+      number: registration.number ?? '',
+      complement: registration.complement ?? '',
+      neighborhood: registration.neighborhood ?? '',
+      city: registration.city ?? '',
+      state: registration.state ?? '',
+    });
+  }, [registration, reset]);
 
   const cepValue = watch('cep');
 
@@ -148,9 +165,18 @@ export default function AddressPage() {
           </div>
         </div>
 
-        <FormButton type="submit" isLoading={isLoading || cepLoading}>
-          Continuar
-        </FormButton>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <FormButton type="button" variant="secondary" onClick={() => router.push('/register/personal-data')}>
+              Voltar
+            </FormButton>
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormButton type="submit" isLoading={isLoading || cepLoading}>
+              Continuar
+            </FormButton>
+          </div>
+        </div>
       </form>
     </div>
   );

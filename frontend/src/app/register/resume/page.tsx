@@ -3,16 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { getResumeRoute } from '@/lib/registration-flow';
 
 const STORAGE_KEY = 'predictus_registration_id';
-
-const STEP_ROUTES: Record<number, string> = {
-  1: '/register/identification',
-  2: '/register/personal-data',
-  3: '/register/address',
-  4: '/register/mfa',
-  5: '/register/review',
-};
 
 export default function ResumePage() {
   const router = useRouter();
@@ -30,8 +23,7 @@ export default function ResumePage() {
       .getRegistration(id)
       .then((registration) => {
         localStorage.setItem(STORAGE_KEY, id);
-        const step = registration.currentStep as number;
-        const route = STEP_ROUTES[step] || '/register/identification';
+        const route = getResumeRoute(registration);
         router.replace(route);
       })
       .catch(() => {

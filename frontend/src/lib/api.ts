@@ -1,8 +1,18 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+
+function buildApiUrl(path: string) {
+  // In the browser, prefer same-origin requests so Next rewrites proxy to the backend
+  // and we avoid public cross-origin calls and CORS issues.
+  if (typeof window !== 'undefined') {
+    return path;
+  }
+
+  return API_URL ? `${API_URL}${path}` : path;
+}
 
 export const api = {
   async startRegistration(email: string) {
-    const res = await fetch(`${API_URL}/registration/start`, {
+    const res = await fetch(buildApiUrl('/registration/start'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -12,7 +22,7 @@ export const api = {
   },
 
   async updateStep(id: string, step: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/registration/${id}/step`, {
+    const res = await fetch(buildApiUrl(`/registration/${id}/step`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ step, data }),
@@ -22,7 +32,7 @@ export const api = {
   },
 
   async verifyMfa(id: string, code: string) {
-    const res = await fetch(`${API_URL}/registration/${id}/mfa`, {
+    const res = await fetch(buildApiUrl(`/registration/${id}/mfa`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),
@@ -32,7 +42,7 @@ export const api = {
   },
 
   async completeRegistration(id: string, password: string) {
-    const res = await fetch(`${API_URL}/registration/${id}/complete`, {
+    const res = await fetch(buildApiUrl(`/registration/${id}/complete`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
@@ -42,7 +52,7 @@ export const api = {
   },
 
   async resendMfa(id: string) {
-    const res = await fetch(`${API_URL}/registration/${id}/mfa/resend`, {
+    const res = await fetch(buildApiUrl(`/registration/${id}/mfa/resend`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -51,19 +61,19 @@ export const api = {
   },
 
   async listRegistrations() {
-    const res = await fetch(`${API_URL}/registration`);
+    const res = await fetch(buildApiUrl('/registration'));
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async getRegistration(id: string) {
-    const res = await fetch(`${API_URL}/registration/${id}`);
+    const res = await fetch(buildApiUrl(`/registration/${id}`));
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
 
   async lookupCep(cep: string) {
-    const res = await fetch(`${API_URL}/cep/${cep}`);
+    const res = await fetch(buildApiUrl(`/cep/${cep}`));
     if (!res.ok) return null;
     return res.json();
   },

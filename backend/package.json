@@ -10,7 +10,13 @@
     "build": "nest build",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "typeorm": "ts-node -r dotenv/config ./node_modules/typeorm/cli.js --dataSource src/data-source.ts",
+    "migration:run": "npm run typeorm migration:run",
+    "migration:revert": "npm run typeorm migration:revert",
+    "migration:generate": "npm run typeorm migration:generate src/migrations/Migration",
+    "migration:create": "npm run typeorm migration:create src/migrations/Migration",
+    "migration:show": "npm run typeorm migration:show"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -40,7 +46,6 @@
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.0",
     "ts-node": "^10.9.0",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.0"
   },
   "jest": {

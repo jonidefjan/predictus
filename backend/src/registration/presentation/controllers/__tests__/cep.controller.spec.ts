@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { CepController } from '../cep.controller';
-import { CEP_PROVIDER, ICepProvider, CepResponse } from '../../../domain/interfaces/cep-provider.interface';
+import { ViaCepProvider, CepResponse } from '../../../infrastructure/providers/viacep-cep.provider';
 
 describe('CepController', () => {
   let controller: CepController;
-  let cepProvider: jest.Mocked<ICepProvider>;
+  let cepProvider: jest.Mocked<ViaCepProvider>;
 
   const mockCepResponse: CepResponse = {
     cep: '01001-000',
@@ -17,17 +17,15 @@ describe('CepController', () => {
   };
 
   beforeEach(async () => {
-    const mockProvider: jest.Mocked<ICepProvider> = {
-      findByCep: jest.fn(),
-    };
+    const mockProvider = { findByCep: jest.fn() } as jest.Mocked<Pick<ViaCepProvider, 'findByCep'>>;
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CepController],
-      providers: [{ provide: CEP_PROVIDER, useValue: mockProvider }],
+      providers: [{ provide: ViaCepProvider, useValue: mockProvider }],
     }).compile();
 
     controller = module.get<CepController>(CepController);
-    cepProvider = module.get(CEP_PROVIDER);
+    cepProvider = module.get(ViaCepProvider);
   });
 
   it('returns CepResponse when provider finds the CEP', async () => {

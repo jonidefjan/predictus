@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
-import { IEmailProvider } from '../../domain/interfaces/email-provider.interface';
 
 @Injectable()
-export class ResendEmailProvider implements IEmailProvider {
+export class ResendEmailProvider {
   private readonly logger = new Logger(ResendEmailProvider.name);
   private readonly resend: Resend;
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,6 +8,7 @@ import { reviewSchema } from '@/lib/validations';
 import { useRegistration } from '@/hooks/useRegistration';
 import { FormField } from '@/components/FormField';
 import { FormButton } from '@/components/FormButton';
+import { formatCep, formatCpf, formatDateBR, formatPhoneBR } from '@/lib/formatters';
 
 type FormData = z.infer<typeof reviewSchema>;
 
@@ -41,6 +43,7 @@ function DataRow({ label, value }: { label: string; value?: string }) {
 }
 
 export default function ReviewPage() {
+  const router = useRouter();
   const { completeRegistration, registration, isLoading, error, clearError } = useRegistration();
 
   const {
@@ -94,14 +97,14 @@ export default function ReviewPage() {
         </h2>
         <DataRow label="E-mail" value={registration?.email} />
         <DataRow label="Nome" value={registration?.name} />
-        <DataRow label="CPF" value={registration?.cpf} />
-        <DataRow label="Telefone" value={registration?.phone} />
-        <DataRow label="Data de Nascimento" value={registration?.birthDate} />
+        <DataRow label="CPF" value={formatCpf(registration?.cpf)} />
+        <DataRow label="Telefone" value={formatPhoneBR(registration?.phone)} />
+        <DataRow label="Data de Nascimento" value={formatDateBR(registration?.birthDate)} />
 
         <h2 style={{ fontSize: 14, fontWeight: 600, color: '#374151', margin: '16px 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Endereço
         </h2>
-        <DataRow label="CEP" value={registration?.cep} />
+        <DataRow label="CEP" value={formatCep(registration?.cep)} />
         <DataRow
           label="Logradouro"
           value={[registration?.street, registration?.number, registration?.complement].filter(Boolean).join(', ')}
@@ -132,9 +135,18 @@ export default function ReviewPage() {
           />
         </FormField>
 
-        <FormButton type="submit" isLoading={isLoading}>
-          Concluir Cadastro
-        </FormButton>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <FormButton type="button" variant="secondary" onClick={() => router.push('/register/mfa')}>
+              Voltar
+            </FormButton>
+          </div>
+          <div style={{ flex: 1 }}>
+            <FormButton type="submit" isLoading={isLoading}>
+              Concluir Cadastro
+            </FormButton>
+          </div>
+        </div>
       </form>
     </div>
   );

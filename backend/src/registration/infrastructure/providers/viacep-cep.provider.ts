@@ -1,8 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ICepProvider, CepResponse } from '../../domain/interfaces/cep-provider.interface';
+
+export interface CepResponse {
+  cep: string;
+  street: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+}
 
 @Injectable()
-export class ViaCepProvider implements ICepProvider {
+export class ViaCepProvider {
   private readonly logger = new Logger(ViaCepProvider.name);
 
   async findByCep(cep: string): Promise<CepResponse | null> {
